@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Atx\ExportProgress;
 
-use Atx\ExportProgress\Contracts\ExportProgressCounter;
-use Atx\ExportProgress\Contracts\ExportService;
 use App\Enums\ExportType;
 use App\Enums\SupportedLocale;
+use App\Models\User;
+use Atx\ExportProgress\Contracts\ExportProgressCounter;
+use Atx\ExportProgress\Contracts\ExportService;
 use Atx\ExportProgress\Events\ExportFailed;
 use Atx\ExportProgress\Events\ExportProgressed;
-use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -29,7 +30,6 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Events\BeforeSheet;
-use Illuminate\Database\Eloquent\Model;
 use Throwable;
 
 abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, ShouldQueue, WithColumnFormatting, WithCustomChunkSize, WithEvents, WithHeadings, WithMapping

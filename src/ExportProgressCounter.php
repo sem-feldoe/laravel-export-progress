@@ -32,7 +32,7 @@ final class ExportProgressCounter implements ExportProgressCounterContract
 
     private function getCacheKey(string $uuid, ?int $modelId): string
     {
-        if (null === $modelId) {
+        if ($modelId === null) {
             $modelId = 'no_model';
         }
 

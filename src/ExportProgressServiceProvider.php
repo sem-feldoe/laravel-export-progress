@@ -14,5 +14,4 @@ final class ExportProgressServiceProvider extends ServiceProvider
         ExportProgressCounterContract::class => ExportProgressCounter::class,
         ExportServiceContract::class => ExportService::class,
     ];
-
 }
