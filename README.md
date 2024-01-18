@@ -1,34 +1,32 @@
-# Simple service to build api response for resource index
+# Add Broadcast events to your exports
 
 Example
 
 ```php
-use Atx\ResourceIndex\Contracts\ResourceIndex;
-use Illuminate\Routing\Controller;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
-class Index extends Controller
+final class UsersExport extends AbstractExport implements FromQuery
 {
-    public function __invoke(Request $request, ResourceIndex $service): JsonResponse
+    /**
+     * @param User $user
+     */
+    public function map($user): array
     {
-        return $service->from(MyModel::class, MyModelResource::class)
-            ->processRequest(
-                $request,
-                // Filterable
-                [
-                    'filterable_column',
-                ],
-                // Searchable
-                [
-                    'searchable_column',
-                ],
-                // Sortable
-                [
-                    'sortable_column',
-                ]
-            )
-            ->response();
+        try {
+            $this->sendProgressEventIfNeeded();
+        } catch (Exception $exception) {
+            Log::error(__('Failed to send progress event => :message', ['message' => $exception->getMessage()]));
+        }
+
+        return [
+            $user->id,
+            $user->username,
+            $user->email,
+        ];
+    }
+
+    public function query(): Builder
+    {
+        return User::query();
     }
 }
 ```
