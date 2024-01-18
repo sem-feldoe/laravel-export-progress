@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum ExportType:string
+enum ExportType: string
 {
     case TYPE1 = 'type1';
 

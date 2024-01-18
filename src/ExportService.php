@@ -49,7 +49,7 @@ final class ExportService implements ExportServiceContract
 
     private function getCacheKey(string $uuid, ?int $modelId = null): string
     {
-        $formId = null !== $modelId ? "$modelId" : 'no_model';
+        $formId = $modelId !== null ? "$modelId" : 'no_model';
 
         return 'export_started_at_'.$uuid.'_'.$formId;
     }
