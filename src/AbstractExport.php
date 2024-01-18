@@ -1,0 +1,157 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Atx\ExportProgress;
+
+use Atx\ExportProgress\Contracts\ExportProgressCounter;
+use Atx\ExportProgress\Contracts\ExportService;
+use App\Enums\ExportType;
+use App\Enums\SupportedLocale;
+use Atx\ExportProgress\Events\ExportFailed;
+use Atx\ExportProgress\Events\ExportProgressed;
+use App\Models\User;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Translation\HasLocalePreference;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Queue\Middleware\RateLimited;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\RegistersEventListeners;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithCustomChunkSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Events\AfterSheet;
+use Maatwebsite\Excel\Events\BeforeSheet;
+use Illuminate\Database\Eloquent\Model;
+use Throwable;
+
+abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, ShouldQueue, WithColumnFormatting, WithCustomChunkSize, WithEvents, WithHeadings, WithMapping
+{
+    use Exportable, RegistersEventListeners;
+
+    private float $lastProgressSent = 0.0;
+
+    public function __construct(
+        protected User $user,
+        protected string $uuid,
+        protected ExportType $type,
+        protected SupportedLocale $locale,
+        protected Collection $filters,
+        private readonly ?Model $model,
+        private readonly ExportProgressCounter $counter,
+        private readonly ExportService $exportService,
+
+    ) {
+    }
+
+    public function middleware(): array
+    {
+        return [new RateLimited($this->type->value)];
+    }
+
+    public function preferredLocale(): ?string
+    {
+        return $this->locale->value;
+    }
+
+    /**
+     * @throws \Exception
+     */
+    protected function sendProgressEventIfNeeded(): void
+    {
+        $currentProgress = $this->getProgress();
+        if ($currentProgress - $this->lastProgressSent >= 0.01) {
+            ExportProgressed::dispatch(
+                $this->user,
+                $this->uuid,
+                $this->type,
+                $this->model,
+                $currentProgress,
+                $this->exportService->calculateEstimatedFinishedTime($this->uuid, $currentProgress, $this->model?->getKey())
+            );
+            $this->lastProgressSent = $currentProgress;
+        }
+    }
+
+    public function start(): void
+    {
+        $this->exportService->startExport($this->uuid, $this->model?->getKey());
+        Log::debug('starting ', [
+            'uuid' => $this->uuid,
+            'at' => $this->exportService->getStartedAt($this->uuid, $this->model?->getKey())->toDateTimeString(),
+        ]);
+    }
+
+    public function stop(): void
+    {
+        $this->exportService->endExport($this->uuid, $this->model?->getKey());
+    }
+
+    private function getProgressCount(bool $increment = false): int
+    {
+        if ($increment) {
+            $this->counter->increment($this->uuid, $this->model?->getKey());
+        }
+
+        return $this->counter->getCounter($this->uuid, $this->model?->getKey());
+    }
+
+    private function getProgress(): float
+    {
+        $total = $this->getTotal();
+        $progressCount = $this->getProgressCount(true);
+
+        return $total > 0 ? $progressCount / $total : 0;
+    }
+
+    private function getTotal(): int
+    {
+        /** @var ?int $total */
+        static $total = null;
+        if (is_null($total)) {
+            if ($this instanceof FromQuery) {
+                $total = $this->query() instanceof Builder ? $this->query()->count() : 0;
+            } elseif ($this instanceof FromCollection) {
+                $total = $this->collection()->count();
+            } else {
+                $total = 0;
+            }
+        }
+
+        return $total;
+    }
+
+    public function clearCounter(): void
+    {
+        $this->counter->clearCounter($this->uuid, $this->model?->getKey());
+    }
+
+    public static function beforeSheet(BeforeSheet $event): void
+    {
+        $sheet = $event->getConcernable();
+        if ($sheet instanceof static) {
+            $sheet->start();
+        }
+    }
+
+    public static function afterSheet(AfterSheet $event): void
+    {
+        $sheet = $event->getConcernable();
+        if ($sheet instanceof static) {
+            $sheet->clearCounter();
+            $sheet->stop();
+        }
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        ExportFailed::dispatch($this->uuid, $this->type, $this->user, $exception);
+    }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "feldoe/laravel-export-progress",
+  "description": "Add progress broadcast events to your exports",
+  "keywords": [
+    "feldoe",
+    "laravel-export-progress"
+  ],
+  "homepage": "https://github.com/sem-feldoe/laravel-resource-index",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Nicolas DENIAUD",
+      "email": "laravel@feldoe.net",
+      "homepage": "https://www.feldoe.net",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": "^8.2",
+    "maatwebsite/excel": "^3.1",
+    "laravel/framework": "^10.0"
+  },
+  "require-dev": {
+    "nunomaduro/larastan" : "^2.8",
+    "orchestra/testbench" : "^8.0",
+    "phpstan/extension-installer": "^1.2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Atx\\ExportProgress\\": "src"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "phpstan/extension-installer": true
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Atx\\ExportProgress\\ExportProgressServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
