@@ -4,7 +4,6 @@
 Example
 
 ```php
-
 final class UsersExport extends AbstractExport implements FromQuery
 {
     /**
