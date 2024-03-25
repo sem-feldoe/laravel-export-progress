@@ -17,7 +17,12 @@ final class ExportService implements ExportServiceContract
 
     public function getStartedAt(string $uuid, int|string|null $modelId = null): Carbon
     {
-        return Carbon::createFromTimestamp(Cache::get($this->getCacheKey($uuid, $modelId)));
+        $startAtTimestamp = Cache::get($this->getCacheKey($uuid, $modelId));
+        if (null === $startAtTimestamp) {
+            $this->startExport($uuid, $modelId);
+            return now();
+        }
+        return Carbon::createFromTimestamp($startAtTimestamp);
     }
 
     public function endExport(string $uuid, int|string|null $modelId = null): void
@@ -33,6 +38,8 @@ final class ExportService implements ExportServiceContract
         $remainingSeconds = (1.0 - $progress) * ($elapsed / ($progress ?: 0.01));
 
         info('Debug: ', [
+            'uuid' => $uuid,
+            'modelId' => $modelId ?? 'null',
             'startedAt' => $startedAt->toDateTimeString(),
             'currentTime' => $currentTime->toDateTimeString(),
             'elapsed' => $elapsed,
