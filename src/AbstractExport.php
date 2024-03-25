@@ -163,6 +163,7 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
         if (is_string($this->model)) {
             return $this->model;
         }
+
         return null;
     }
 }
