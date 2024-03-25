@@ -18,10 +18,12 @@ final class ExportService implements ExportServiceContract
     public function getStartedAt(string $uuid, int|string|null $modelId = null): Carbon
     {
         $startAtTimestamp = Cache::get($this->getCacheKey($uuid, $modelId));
-        if (null === $startAtTimestamp) {
+        if ($startAtTimestamp === null) {
             $this->startExport($uuid, $modelId);
+
             return now();
         }
+
         return Carbon::createFromTimestamp($startAtTimestamp);
     }
 
