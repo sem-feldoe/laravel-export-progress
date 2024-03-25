@@ -24,7 +24,7 @@ final class ExportProgressed implements ShouldBroadcast
         protected User $user,
         protected string $uuid,
         protected ExportType $type,
-        protected ?Model $model,
+        protected Model|string|null $model,
         protected float $progress,
         protected ?Carbon $estimatedDuration = null
     ) {
@@ -50,7 +50,7 @@ final class ExportProgressed implements ShouldBroadcast
             'model' => $this->model instanceof Model ? [
                 'id' => $this->model->getKey(),
                 'name' => $this->model->title ?? $this->model->name ?? null,
-            ] : null,
+            ] : (is_string($this->model) ? $this->model : null),
             'progress' => round($this->progress, 2),
             'estimated_duration' => $this->getLocalizedEstimatedDuration($this->estimatedDuration),
             'estimated_finished_time' => $this->estimatedDuration?->toDateTimeString(),

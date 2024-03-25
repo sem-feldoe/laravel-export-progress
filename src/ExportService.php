@@ -10,22 +10,22 @@ use Illuminate\Support\Facades\Cache;
 
 final class ExportService implements ExportServiceContract
 {
-    public function startExport(string $uuid, ?int $modelId = null): void
+    public function startExport(string $uuid, int|string|null $modelId = null): void
     {
         Cache::put($this->getCacheKey($uuid, $modelId), now()->timestamp, 3600);
     }
 
-    public function getStartedAt(string $uuid, ?int $modelId = null): Carbon
+    public function getStartedAt(string $uuid, int|string|null $modelId = null): Carbon
     {
         return Carbon::createFromTimestamp(Cache::get($this->getCacheKey($uuid, $modelId)));
     }
 
-    public function endExport(string $uuid, ?int $modelId = null): void
+    public function endExport(string $uuid, int|string|null $modelId = null): void
     {
         Cache::forget($this->getCacheKey($uuid, $modelId));
     }
 
-    public function calculateEstimatedFinishedTime(string $uuid, float $progress, ?int $modelId = null): Carbon
+    public function calculateEstimatedFinishedTime(string $uuid, float $progress, int|string|null $modelId = null): Carbon
     {
         $startedAt = $this->getStartedAt($uuid, $modelId);
         $currentTime = Carbon::now();
@@ -47,7 +47,7 @@ final class ExportService implements ExportServiceContract
         return $currentTime->copy()->addSeconds((int) round($remainingSeconds));
     }
 
-    private function getCacheKey(string $uuid, ?int $modelId = null): string
+    private function getCacheKey(string $uuid, int|string|null $modelId = null): string
     {
         $formId = $modelId !== null ? "$modelId" : 'no_model';
 

@@ -44,7 +44,7 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
         protected ExportType $type,
         protected SupportedLocale $locale,
         protected Collection $filters,
-        private readonly ?Model $model,
+        private readonly Model|string|null $model,
         private readonly ExportProgressCounter $counter,
         private readonly ExportService $exportService,
 
@@ -74,7 +74,7 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
                 $this->type,
                 $this->model,
                 $currentProgress,
-                $this->exportService->calculateEstimatedFinishedTime($this->uuid, $currentProgress, $this->model?->getKey())
+                $this->exportService->calculateEstimatedFinishedTime($this->uuid, $currentProgress, $this->getKeyFromModel())
             );
             $this->lastProgressSent = $currentProgress;
         }
@@ -82,25 +82,25 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
 
     public function start(): void
     {
-        $this->exportService->startExport($this->uuid, $this->model?->getKey());
+        $this->exportService->startExport($this->uuid, $this->getKeyFromModel());
         Log::debug('starting ', [
             'uuid' => $this->uuid,
-            'at' => $this->exportService->getStartedAt($this->uuid, $this->model?->getKey())->toDateTimeString(),
+            'at' => $this->exportService->getStartedAt($this->uuid, $this->getKeyFromModel())->toDateTimeString(),
         ]);
     }
 
     public function stop(): void
     {
-        $this->exportService->endExport($this->uuid, $this->model?->getKey());
+        $this->exportService->endExport($this->uuid, $this->getKeyFromModel());
     }
 
     private function getProgressCount(bool $increment = false): int
     {
         if ($increment) {
-            $this->counter->increment($this->uuid, $this->model?->getKey());
+            $this->counter->increment($this->uuid, $this->getKeyFromModel());
         }
 
-        return $this->counter->getCounter($this->uuid, $this->model?->getKey());
+        return $this->counter->getCounter($this->uuid, $this->getKeyFromModel());
     }
 
     private function getProgress(): float
@@ -130,7 +130,7 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
 
     public function clearCounter(): void
     {
-        $this->counter->clearCounter($this->uuid, $this->model?->getKey());
+        $this->counter->clearCounter($this->uuid, $this->getKeyFromModel());
     }
 
     public static function beforeSheet(BeforeSheet $event): void
@@ -153,5 +153,16 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
     public function failed(Throwable $exception): void
     {
         ExportFailed::dispatch($this->uuid, $this->type, $this->user, $exception);
+    }
+
+    private function getKeyFromModel(): string|int|null
+    {
+        if ($this->model instanceof Model) {
+            return $this->model->getKey();
+        }
+        if (is_string($this->model)) {
+            return $this->model;
+        }
+        return null;
     }
 }

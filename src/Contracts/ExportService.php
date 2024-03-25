@@ -8,11 +8,11 @@ use Carbon\Carbon;
 
 interface ExportService
 {
-    public function startExport(string $uuid, ?int $modelId = null): void;
+    public function startExport(string $uuid, int|string|null $modelId = null): void;
 
-    public function getStartedAt(string $uuid, ?int $modelId = null): Carbon;
+    public function getStartedAt(string $uuid, int|string|null $modelId = null): Carbon;
 
-    public function endExport(string $uuid, ?int $modelId = null): void;
+    public function endExport(string $uuid, int|string|null $modelId = null): void;
 
-    public function calculateEstimatedFinishedTime(string $uuid, float $progress, ?int $modelId = null): Carbon;
+    public function calculateEstimatedFinishedTime(string $uuid, float $progress, int|string|null $modelId = null): Carbon;
 }
