@@ -20,7 +20,6 @@ final class ExportProgressCounter implements ExportProgressCounterContract
     {
         $key = $this->getCacheKey($uuid, $modelId);
 
-        // @phpstan-ignore-next-line
         return (int) Cache::get($key, 0);
     }
 

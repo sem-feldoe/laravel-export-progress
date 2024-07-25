@@ -3,9 +3,10 @@ parameters:
         - src
     level: 5
     tmpDir: build/phpstan
-    checkMissingIterableValueType: false
+    ignoreErrors:
+       - identifier: missingType.iterableValue
+       - identifier: missingType.generics
     checkModelProperties: true
     treatPhpDocTypesAsCertain: false
-    checkGenericClassInNonGenericObjectType: false
     scanDirectories:
         - requirements
