@@ -20,7 +20,8 @@ final class ExportProgressCounter implements ExportProgressCounterContract
     {
         $key = $this->getCacheKey($uuid, $modelId);
 
-        return (int) Cache::get($key, 0); // @phpstan-ignore-error
+        // @phpstan-ignore-next-line
+        return (int) Cache::get($key, 0);
     }
 
     public function clearCounter(string $uuid, int|string|null $modelId = null): void
