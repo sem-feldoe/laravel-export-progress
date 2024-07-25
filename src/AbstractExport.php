@@ -48,8 +48,7 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
         private readonly ExportProgressCounter $counter,
         private readonly ExportService $exportService,
 
-    ) {
-    }
+    ) {}
 
     public function middleware(): array
     {

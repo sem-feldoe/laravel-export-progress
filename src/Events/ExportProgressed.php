@@ -27,8 +27,7 @@ final class ExportProgressed implements ShouldBroadcast
         protected Model|string|null $model,
         protected float $progress,
         protected ?Carbon $estimatedDuration = null
-    ) {
-    }
+    ) {}
 
     public function broadcastOn(): array
     {
