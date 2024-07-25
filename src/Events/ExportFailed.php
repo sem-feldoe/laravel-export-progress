@@ -22,8 +22,7 @@ final class ExportFailed implements ShouldBroadcast
         protected ExportType $type,
         protected User $user,
         protected Throwable $reason
-    ) {
-    }
+    ) {}
 
     public function broadcastOn(): array
     {

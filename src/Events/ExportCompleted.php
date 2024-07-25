@@ -21,8 +21,7 @@ final class ExportCompleted implements ShouldBroadcast
         protected string $url,
         protected string $uuid,
         protected readonly ExportType $type
-    ) {
-    }
+    ) {}
 
     public function broadcastOn(): array
     {
@@ -36,19 +35,23 @@ final class ExportCompleted implements ShouldBroadcast
         return 'export.completed';
     }
 
-    public function getUser(): User {
+    public function getUser(): User
+    {
         return $this->user;
     }
 
-    public function getUuid(): string {
+    public function getUuid(): string
+    {
         return $this->uuid;
     }
 
-    public function getType(): ExportType {
+    public function getType(): ExportType
+    {
         return $this->type;
     }
 
-    public function getUrl(): string {
+    public function getUrl(): string
+    {
         return $this->url;
     }
 
