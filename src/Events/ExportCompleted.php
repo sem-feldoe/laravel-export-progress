@@ -36,6 +36,22 @@ final class ExportCompleted implements ShouldBroadcast
         return 'export.completed';
     }
 
+    public function getUser(): User {
+        return $this->user;
+    }
+
+    public function getUuid(): string {
+        return $this->uuid;
+    }
+
+    public function getType(): ExportType {
+        return $this->type;
+    }
+
+    public function getUrl(): string {
+        return $this->url;
+    }
+
     public function broadcastWith(): array
     {
         return [
