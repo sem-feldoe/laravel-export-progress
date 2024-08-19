@@ -7,6 +7,7 @@ namespace Atx\ExportProgress;
 use Atx\ExportProgress\Contracts\ExportService as ExportServiceContract;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 final class ExportService implements ExportServiceContract
 {
@@ -39,7 +40,11 @@ final class ExportService implements ExportServiceContract
         $elapsed = $startedAt->diffInSeconds($currentTime);
         $remainingSeconds = (1.0 - $progress) * ($elapsed / ($progress ?: 0.01));
 
-        info('Debug: ', [
+        if ($remainingSeconds < 0) {
+            $remainingSeconds = 0;
+        }
+
+        Log::debug('calculateEstimatedFinishedTime', [
             'uuid' => $uuid,
             'modelId' => $modelId ?? 'null',
             'startedAt' => $startedAt->toDateTimeString(),
@@ -50,10 +55,10 @@ final class ExportService implements ExportServiceContract
         ]);
 
         if ($progress < 0.01) {
-            return $currentTime->copy()->addSeconds(5 * 60);  // Estimation fixe de 3 minutes
+            return $currentTime->addSeconds(5 * 60);  // Estimation fixe de 3 minutes
         }
 
-        return $currentTime->copy()->addSeconds((int) round($remainingSeconds));
+        return $currentTime->addSeconds((int) round($remainingSeconds));
     }
 
     private function getCacheKey(string $uuid, int|string|null $modelId = null): string
