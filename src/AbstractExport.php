@@ -38,6 +38,8 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
 
     private float $lastProgressSent = 0.0;
 
+    private ?int $total = null;
+
     public function __construct(
         protected User $user,
         protected string $uuid,
@@ -84,6 +86,7 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
         $this->exportService->startExport($this->uuid, $this->getKeyFromModel());
         Log::debug('starting ', [
             'uuid' => $this->uuid,
+            'model' => $this->getKeyFromModel() ?? 'null',
             'at' => $this->exportService->getStartedAt($this->uuid, $this->getKeyFromModel())->toDateTimeString(),
         ]);
     }
@@ -91,6 +94,10 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
     public function stop(): void
     {
         $this->exportService->endExport($this->uuid, $this->getKeyFromModel());
+        Log::debug('stopping ', [
+            'uuid' => $this->uuid,
+            'model' => $this->getKeyFromModel() ?? 'null',
+        ]);
     }
 
     private function getProgressCount(bool $increment = false): int
@@ -112,19 +119,17 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
 
     private function getTotal(): int
     {
-        /** @var ?int $total */
-        static $total = null;
-        if (is_null($total)) {
+        if (is_null($this->total)) {
             if ($this instanceof FromQuery) {
-                $total = $this->query() instanceof Builder ? $this->query()->count() : 0;
+                $this->total = $this->query() instanceof Builder ? $this->query()->count() : 0;
             } elseif ($this instanceof FromCollection) {
-                $total = $this->collection()->count();
+                $this->total = $this->collection()->count();
             } else {
-                $total = 0;
+                $this->total = 0;
             }
         }
 
-        return $total;
+        return $this->total;
     }
 
     public function clearCounter(): void
