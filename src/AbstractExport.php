@@ -41,7 +41,7 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
     private ?int $total = null;
 
     public function __construct(
-        protected User $user,
+        protected ?User $user,
         protected string $uuid,
         protected ExportType $type,
         protected SupportedLocale $locale,
@@ -69,14 +69,17 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
     {
         $currentProgress = $this->getProgress();
         if ($currentProgress - $this->lastProgressSent >= 0.01) {
-            ExportProgressed::dispatch(
-                $this->user,
-                $this->uuid,
-                $this->type,
-                $this->model,
-                $currentProgress,
-                $this->exportService->calculateEstimatedFinishedTime($this->uuid, $currentProgress, $this->getKeyFromModel())
-            );
+            if ($this->user instanceof User) {
+                ExportProgressed::dispatch(
+                    $this->user,
+                    $this->uuid,
+                    $this->type,
+                    $this->model,
+                    $currentProgress,
+                    $this->exportService->calculateEstimatedFinishedTime($this->uuid, $currentProgress,
+                        $this->getKeyFromModel())
+                );
+            }
             $this->lastProgressSent = $currentProgress;
         }
     }
@@ -156,7 +159,9 @@ abstract class AbstractExport implements HasLocalePreference, ShouldAutoSize, Sh
 
     public function failed(Throwable $exception): void
     {
-        ExportFailed::dispatch($this->uuid, $this->type, $this->user, $exception);
+        if ($this->user instanceof User) {
+            ExportFailed::dispatch($this->uuid, $this->type, $this->user, $exception);
+        }
     }
 
     private function getKeyFromModel(): string|int|null
