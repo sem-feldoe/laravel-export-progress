@@ -26,7 +26,7 @@ final class ExportProgressed implements ShouldBroadcast
         protected ExportType $type,
         protected Model|string|null $model,
         protected float $progress,
-        protected ?Carbon $estimatedDuration = null
+        protected ?Carbon $estimatedFinishedTime = null
     ) {}
 
     public function broadcastOn(): array
@@ -51,8 +51,8 @@ final class ExportProgressed implements ShouldBroadcast
                 'name' => $this->model->title ?? $this->model->name ?? null,
             ] : (is_string($this->model) ? $this->model : null),
             'progress' => round($this->progress, 2),
-            'estimated_duration' => $this->getLocalizedEstimatedDuration($this->estimatedDuration),
-            'estimated_finished_time' => $this->estimatedDuration?->toDateTimeString(),
+            'estimated_duration' => $this->getLocalizedEstimatedDuration($this->estimatedFinishedTime),
+            'estimated_finished_time' => $this->estimatedFinishedTime?->toDateTimeString(),
         ];
     }
 

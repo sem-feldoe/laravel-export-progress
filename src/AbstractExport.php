@@ -161,6 +161,16 @@ abstract class AbstractExport extends DefaultValueBinder implements HasLocalePre
 
     public function failed(Throwable $exception): void
     {
+        try {
+            $this->clearCounter();
+        } catch (Throwable) {
+        }
+
+        try {
+            $this->exportService->endExport($this->uuid, $this->getKeyFromModel());
+        } catch (Throwable) {
+        }
+
         if ($this->user instanceof User) {
             ExportFailed::dispatch($this->uuid, $this->type, $this->user, $exception);
         }

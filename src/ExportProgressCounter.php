@@ -12,7 +12,6 @@ final class ExportProgressCounter implements ExportProgressCounterContract
     public function increment(string $uuid, int|string|null $modelId = null): void
     {
         $key = $this->getCacheKey($uuid, $modelId);
-
         Cache::increment($key);
     }
 
