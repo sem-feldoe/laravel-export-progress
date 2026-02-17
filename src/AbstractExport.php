@@ -6,8 +6,6 @@ namespace Atx\ExportProgress;
 
 use App\Enums\ExportType;
 use App\Enums\SupportedLocale;
-use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
-use Maatwebsite\Excel\DefaultValueBinder;
 use App\Models\User;
 use Atx\ExportProgress\Contracts\ExportProgressCounter;
 use Atx\ExportProgress\Contracts\ExportService;
@@ -27,14 +25,16 @@ use Maatwebsite\Excel\Concerns\RegistersEventListeners;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithCustomChunkSize;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\DefaultValueBinder;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Events\BeforeSheet;
 use Throwable;
 
-abstract class AbstractExport extends DefaultValueBinder implements HasLocalePreference, ShouldAutoSize, ShouldQueue, WithColumnFormatting, WithCustomChunkSize, WithEvents, WithHeadings, WithCustomValueBinder, WithMapping
+abstract class AbstractExport extends DefaultValueBinder implements HasLocalePreference, ShouldAutoSize, ShouldQueue, WithColumnFormatting, WithCustomChunkSize, WithCustomValueBinder, WithEvents, WithHeadings, WithMapping
 {
     use Exportable, RegistersEventListeners;
 
