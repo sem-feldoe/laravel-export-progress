@@ -65,17 +65,17 @@ final class ExportService implements ExportServiceContract
         $t = microtime(true);
         $dt = ($prevAt !== null) ? max(0.0, $t - $prevAt) : 0.0;
 
+       if ($previousRemainingSeconds !== null) {
+            $previousRemainingSeconds = max(0.0, $previousRemainingSeconds - $dt);
+        }
+
         $nearEndByProgress = $progress >= 0.98;
         $nearEndBySeconds = $remainingSecondsRaw <= 8.0;
 
         if ($nearEndByProgress || $nearEndBySeconds) {
-            $maxLag = 1.5;
-            $remainingSecondsSmoothed = min(
-                ($previousRemainingSeconds ?? $remainingSecondsRaw),
-                $remainingSecondsRaw + $maxLag
-            );
+            $remainingSecondsSmoothed = $remainingSecondsRaw;
         } else {
-            $alpha = 0.20;
+            $alpha = 0.40;
             $smoothed = ($previousRemainingSeconds === null)
                 ? $remainingSecondsRaw
                 : ((1.0 - $alpha) * $previousRemainingSeconds + $alpha * $remainingSecondsRaw);
