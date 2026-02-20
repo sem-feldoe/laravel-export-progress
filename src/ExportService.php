@@ -74,13 +74,14 @@ final class ExportService implements ExportServiceContract
         $nearEndByProgress = $progress >= 0.98;
         $nearEndBySeconds = $remainingSecondsRaw <= 8.0;
 
-        if ($nearEndByProgress || $nearEndBySeconds) {
+        $needReseed = ($previousRemainingSeconds === null)
+            || ($previousRemainingSeconds < 1.0 && $remainingSecondsRaw > 10.0);
+
+        if ($nearEndByProgress || $nearEndBySeconds || $needReseed) {
             $remainingSecondsSmoothed = $remainingSecondsRaw;
         } else {
             $alpha = 0.40;
-            $remainingSecondsSmoothed = ($previousRemainingSeconds === null)
-                ? $remainingSecondsRaw
-                : ((1.0 - $alpha) * $previousRemainingSeconds + $alpha * $remainingSecondsRaw);
+            $remainingSecondsSmoothed = ((1.0 - $alpha) * $previousRemainingSeconds + $alpha * $remainingSecondsRaw);
         }
 
         Cache::put($etaKey, $remainingSecondsSmoothed, 3600);
