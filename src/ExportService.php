@@ -31,34 +31,46 @@ final class ExportService implements ExportServiceContract
     public function endExport(string $uuid, int|string|null $modelId = null): void
     {
         Cache::forget($this->getCacheKey($uuid, $modelId));
+        Cache::forget($this->getEtaCacheKey($uuid, $modelId));
     }
 
     public function calculateEstimatedFinishedTime(string $uuid, float $progress, int|string|null $modelId = null): Carbon
     {
         $startedAt = $this->getStartedAt($uuid, $modelId);
         $currentTime = Carbon::now();
-        $elapsed = $startedAt->diffInSeconds($currentTime);
-        $remainingSeconds = (1.0 - $progress) * ($elapsed / ($progress ?: 0.01));
 
-        if ($remainingSeconds < 0) {
-            $remainingSeconds = 0;
+        $progress = max(0.0, min(1.0, $progress));
+        if ($progress >= 1.0) {
+            return $currentTime;
         }
+
+        $elapsedSeconds = max(0.0, (float) $startedAt->diffInRealMilliseconds($currentTime) / 1000.0);
+
+        $totalSecondsEstimate = $elapsedSeconds / $progress;
+        $remainingSecondsRaw = max(0.0, $totalSecondsEstimate - $elapsedSeconds);
+
+        $etaKey = $this->getEtaCacheKey($uuid, $modelId);
+        $previousRemaining = Cache::get($etaKey);
+
+        $alpha = 0.25;
+        $remainingSecondsSmoothed = is_numeric($previousRemaining)
+            ? ((1.0 - $alpha) * (float) $previousRemaining + $alpha * $remainingSecondsRaw)
+            : $remainingSecondsRaw;
+
+        Cache::put($etaKey, $remainingSecondsSmoothed, 3600);
 
         Log::debug('calculateEstimatedFinishedTime', [
             'uuid' => $uuid,
             'modelId' => $modelId ?? 'null',
             'startedAt' => $startedAt->toDateTimeString(),
             'currentTime' => $currentTime->toDateTimeString(),
-            'elapsed' => $elapsed,
+            'elapsedSeconds' => $elapsedSeconds,
             'progress' => $progress,
-            'remainingSeconds' => $remainingSeconds,
+            'remainingSecondsRaw' => $remainingSecondsRaw,
+            'remainingSecondsSmoothed' => $remainingSecondsSmoothed,
         ]);
 
-        if ($progress < 0.01) {
-            return $currentTime->addSeconds(5 * 60);  // Estimation fixe de 3 minutes
-        }
-
-        return $currentTime->addSeconds((int) round($remainingSeconds));
+        return $currentTime->copy()->addSeconds((int) round($remainingSecondsSmoothed));
     }
 
     private function getCacheKey(string $uuid, int|string|null $modelId = null): string
@@ -66,5 +78,12 @@ final class ExportService implements ExportServiceContract
         $formId = $modelId !== null ? "$modelId" : 'no_model';
 
         return 'export_started_at_'.$uuid.'_'.$formId;
+    }
+
+    private function getEtaCacheKey(string $uuid, int|string|null $modelId = null): string
+    {
+        $formId = $modelId !== null ? (string) $modelId : 'no_model';
+
+        return 'export_eta_remaining_' . $uuid . '_' . $formId;
     }
 }

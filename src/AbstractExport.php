@@ -78,8 +78,11 @@ abstract class AbstractExport extends DefaultValueBinder implements HasLocalePre
                     $this->type,
                     $this->model,
                     $currentProgress,
-                    $this->exportService->calculateEstimatedFinishedTime($this->uuid, $currentProgress,
-                        $this->getKeyFromModel())
+                    $this->exportService->calculateEstimatedFinishedTime(
+                        $this->uuid,
+                        $currentProgress,
+                        $this->getKeyFromModel()
+                    )
                 );
             }
             $this->lastProgressSent = $currentProgress;
