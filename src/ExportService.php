@@ -57,6 +57,11 @@ final class ExportService implements ExportServiceContract
             ? ((1.0 - $alpha) * (float) $previousRemaining + $alpha * $remainingSecondsRaw)
             : $remainingSecondsRaw;
 
+        if ($previousRemaining !== null && $remainingSecondsSmoothed > $previousRemaining) {
+            $maxIncreasePerCall = 2.0;
+            $remainingSecondsSmoothed = min($remainingSecondsSmoothed, $previousRemaining + $maxIncreasePerCall);
+        }
+
         Cache::put($etaKey, $remainingSecondsSmoothed, 3600);
 
         Log::debug('calculateEstimatedFinishedTime', [

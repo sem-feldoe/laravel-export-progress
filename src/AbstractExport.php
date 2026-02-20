@@ -40,6 +40,8 @@ abstract class AbstractExport extends DefaultValueBinder implements HasLocalePre
 
     private float $lastProgressSent = 0.0;
 
+    private float $lastEventSentAt = 0.0;
+
     private ?int $total = null;
 
     public function __construct(
@@ -69,6 +71,12 @@ abstract class AbstractExport extends DefaultValueBinder implements HasLocalePre
      */
     protected function sendProgressEventIfNeeded(): void
     {
+        $now = microtime(true);
+
+        if (($now - $this->lastEventSentAt) < 1.0) {
+            return;
+        }
+
         $currentProgress = $this->getProgress();
         if ($currentProgress - $this->lastProgressSent >= 0.01) {
             if ($this->user instanceof User) {
@@ -86,6 +94,7 @@ abstract class AbstractExport extends DefaultValueBinder implements HasLocalePre
                 );
             }
             $this->lastProgressSent = $currentProgress;
+            $this->lastEventSentAt = $now;
         }
     }
 
