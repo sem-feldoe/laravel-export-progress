@@ -63,6 +63,7 @@ final class ExportService implements ExportServiceContract
 
         $meta = Cache::get($etaMetaKey);
         $prevAt = (is_array($meta) && isset($meta['t']) && is_numeric($meta['t'])) ? (float) $meta['t'] : null;
+        $seeded = is_array($meta) && array_key_exists('seeded', $meta) && (bool) $meta['seeded'];
 
         $t = microtime(true);
         $dt = ($prevAt !== null) ? max(0.0, $t - $prevAt) : 0.0;
@@ -77,15 +78,20 @@ final class ExportService implements ExportServiceContract
         $needReseed = ($previousRemainingSeconds === null)
             || ($previousRemainingSeconds < 1.0 && $remainingSecondsRaw > 10.0);
 
-        if ($nearEndByProgress || $nearEndBySeconds || $needReseed) {
+        if (!$seeded && $remainingSecondsRaw > 0.0) {
+            $remainingSecondsSmoothed = $remainingSecondsRaw;
+            $seeded = true;
+        } elseif ($nearEndByProgress || $nearEndBySeconds || $needReseed) {
             $remainingSecondsSmoothed = $remainingSecondsRaw;
         } else {
             $alpha = 0.40;
             $remainingSecondsSmoothed = ((1.0 - $alpha) * $previousRemainingSeconds + $alpha * $remainingSecondsRaw);
         }
 
-        Cache::put($etaKey, $remainingSecondsSmoothed, 3600);
-        Cache::put($etaMetaKey, ['t' => $t], 3600);
+        if ($seeded) {
+            Cache::put($etaKey, $remainingSecondsSmoothed, 3600);
+        }
+        Cache::put($etaMetaKey, ['t' => $t, 'seeded' => $seeded], 3600);
 
         Log::debug('calculateEstimatedFinishedTime', [
             'uuid' => $uuid,
