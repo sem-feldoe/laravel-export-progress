@@ -32,7 +32,7 @@ final class ExportService implements ExportServiceContract
     {
         Cache::forget($this->getCacheKey($uuid, $modelId));
         Cache::forget($this->getEtaCacheKey($uuid, $modelId));
-        Cache::forget($this->getEtaCacheKey($uuid, $modelId) . ':meta');
+        Cache::forget($this->getEtaCacheKey($uuid, $modelId).':meta');
     }
 
     public function calculateEstimatedFinishedTime(string $uuid, float $progress, int|string|null $modelId = null): Carbon
@@ -54,7 +54,7 @@ final class ExportService implements ExportServiceContract
         $remainingSecondsRaw = max(0.0, $totalSecondsEstimate - $elapsedSeconds);
 
         $etaKey = $this->getEtaCacheKey($uuid, $modelId);
-        $etaMetaKey = $etaKey . ':meta';
+        $etaMetaKey = $etaKey.':meta';
 
         $previousRemainingSeconds = Cache::get($etaKey);
         $previousRemainingSeconds = is_numeric($previousRemainingSeconds) ? (float) $previousRemainingSeconds : null;
