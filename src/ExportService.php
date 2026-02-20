@@ -78,7 +78,7 @@ final class ExportService implements ExportServiceContract
         $needReseed = ($previousRemainingSeconds === null)
             || ($previousRemainingSeconds < 1.0 && $remainingSecondsRaw > 10.0);
 
-        if (!$seeded && $remainingSecondsRaw > 0.0) {
+        if (! $seeded && $remainingSecondsRaw > 0.0) {
             $remainingSecondsSmoothed = $remainingSecondsRaw;
             $seeded = true;
         } elseif ($nearEndByProgress || $nearEndBySeconds || $needReseed) {
