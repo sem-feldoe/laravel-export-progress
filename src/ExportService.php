@@ -65,7 +65,7 @@ final class ExportService implements ExportServiceContract
         $t = microtime(true);
         $dt = ($prevAt !== null) ? max(0.0, $t - $prevAt) : 0.0;
 
-       if ($previousRemainingSeconds !== null) {
+        if ($previousRemainingSeconds !== null) {
             $previousRemainingSeconds = max(0.0, $previousRemainingSeconds - $dt);
         }
 
