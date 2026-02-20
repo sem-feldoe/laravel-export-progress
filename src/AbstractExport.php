@@ -72,12 +72,12 @@ abstract class AbstractExport extends DefaultValueBinder implements HasLocalePre
     protected function sendProgressEventIfNeeded(): void
     {
         $now = microtime(true);
+        $currentProgress = $this->getProgress();
 
         if (($now - $this->lastEventSentAt) < 1.0) {
             return;
         }
 
-        $currentProgress = $this->getProgress();
         if ($currentProgress - $this->lastProgressSent >= 0.01) {
             if ($this->user instanceof User) {
                 ExportProgressed::dispatch(
