@@ -14,6 +14,8 @@ final class ExportService implements ExportServiceContract
     public function startExport(string $uuid, int|string|null $modelId = null): void
     {
         Cache::put($this->getCacheKey($uuid, $modelId), now()->timestamp, 3600);
+        Cache::forget($this->getEtaCacheKey($uuid, $modelId));
+        Cache::forget($this->getEtaCacheKey($uuid, $modelId).':meta');
     }
 
     public function getStartedAt(string $uuid, int|string|null $modelId = null): Carbon
@@ -76,16 +78,9 @@ final class ExportService implements ExportServiceContract
             $remainingSecondsSmoothed = $remainingSecondsRaw;
         } else {
             $alpha = 0.40;
-            $smoothed = ($previousRemainingSeconds === null)
+            $remainingSecondsSmoothed = ($previousRemainingSeconds === null)
                 ? $remainingSecondsRaw
                 : ((1.0 - $alpha) * $previousRemainingSeconds + $alpha * $remainingSecondsRaw);
-
-            if ($previousRemainingSeconds !== null && $smoothed > $previousRemainingSeconds && $dt > 0.0) {
-                $maxIncreasePerSecond = 1.5;
-                $smoothed = min($smoothed, $previousRemainingSeconds + ($maxIncreasePerSecond * $dt));
-            }
-
-            $remainingSecondsSmoothed = $smoothed;
         }
 
         Cache::put($etaKey, $remainingSecondsSmoothed, 3600);
