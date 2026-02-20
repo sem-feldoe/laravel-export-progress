@@ -32,6 +32,7 @@ final class ExportService implements ExportServiceContract
     {
         Cache::forget($this->getCacheKey($uuid, $modelId));
         Cache::forget($this->getEtaCacheKey($uuid, $modelId));
+        Cache::forget($this->getEtaCacheKey($uuid, $modelId) . ':meta');
     }
 
     public function calculateEstimatedFinishedTime(string $uuid, float $progress, int|string|null $modelId = null): Carbon
@@ -39,6 +40,9 @@ final class ExportService implements ExportServiceContract
         $startedAt = $this->getStartedAt($uuid, $modelId);
         $currentTime = Carbon::now();
 
+        if ($progress > 1.0) {
+            $progress = $progress / 100.0;
+        }
         $progress = max(0.0, min(1.0, $progress));
         if ($progress >= 1.0) {
             return $currentTime;
@@ -46,23 +50,46 @@ final class ExportService implements ExportServiceContract
 
         $elapsedSeconds = max(0.0, (float) $startedAt->diffInRealMilliseconds($currentTime) / 1000.0);
 
-        $totalSecondsEstimate = $elapsedSeconds / $progress;
+        $totalSecondsEstimate = $elapsedSeconds / max($progress, 1e-6);
         $remainingSecondsRaw = max(0.0, $totalSecondsEstimate - $elapsedSeconds);
 
         $etaKey = $this->getEtaCacheKey($uuid, $modelId);
-        $previousRemaining = Cache::get($etaKey);
+        $etaMetaKey = $etaKey . ':meta';
 
-        $alpha = 0.25;
-        $remainingSecondsSmoothed = is_numeric($previousRemaining)
-            ? ((1.0 - $alpha) * (float) $previousRemaining + $alpha * $remainingSecondsRaw)
-            : $remainingSecondsRaw;
+        $previousRemainingSeconds = Cache::get($etaKey);
+        $previousRemainingSeconds = is_numeric($previousRemainingSeconds) ? (float) $previousRemainingSeconds : null;
 
-        if ($previousRemaining !== null && $remainingSecondsSmoothed > $previousRemaining) {
-            $maxIncreasePerCall = 2.0;
-            $remainingSecondsSmoothed = min($remainingSecondsSmoothed, $previousRemaining + $maxIncreasePerCall);
+        $meta = Cache::get($etaMetaKey);
+        $prevAt = (is_array($meta) && isset($meta['t']) && is_numeric($meta['t'])) ? (float) $meta['t'] : null;
+
+        $t = microtime(true);
+        $dt = ($prevAt !== null) ? max(0.0, $t - $prevAt) : 0.0;
+
+        $nearEndByProgress = $progress >= 0.98;
+        $nearEndBySeconds = $remainingSecondsRaw <= 8.0;
+
+        if ($nearEndByProgress || $nearEndBySeconds) {
+            $maxLag = 1.5;
+            $remainingSecondsSmoothed = min(
+                ($previousRemainingSeconds ?? $remainingSecondsRaw),
+                $remainingSecondsRaw + $maxLag
+            );
+        } else {
+            $alpha = 0.20;
+            $smoothed = ($previousRemainingSeconds === null)
+                ? $remainingSecondsRaw
+                : ((1.0 - $alpha) * $previousRemainingSeconds + $alpha * $remainingSecondsRaw);
+
+            if ($previousRemainingSeconds !== null && $smoothed > $previousRemainingSeconds && $dt > 0.0) {
+                $maxIncreasePerSecond = 1.5;
+                $smoothed = min($smoothed, $previousRemainingSeconds + ($maxIncreasePerSecond * $dt));
+            }
+
+            $remainingSecondsSmoothed = $smoothed;
         }
 
         Cache::put($etaKey, $remainingSecondsSmoothed, 3600);
+        Cache::put($etaMetaKey, ['t' => $t], 3600);
 
         Log::debug('calculateEstimatedFinishedTime', [
             'uuid' => $uuid,
